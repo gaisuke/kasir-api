@@ -33,40 +33,39 @@ var categories = []Category{
 	{ID: 3, Name: "Spices", Description: "Kitchen spice products"},
 }
 
+const (
+	apiRoutes           = "/api"
+	apiProductsRoutes   = apiRoutes + "/products"
+	apiCategoriesRoutes = apiRoutes + "/categories"
+)
+
 func main() {
 	mux := http.NewServeMux()
 
-	apiRoutes := "/api"
-	apiProductsRoutes := apiRoutes + "/products"
-	apiCategoriesRoutes := apiRoutes + "/categories"
+	mux.HandleFunc(apiCategoriesRoutes, categoriesHandler)
 
-	mux.HandleFunc(apiCategoriesRoutes+"/", categoriesHandler)
-	mux.HandleFunc(apiCategoriesRoutes, func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(categories)
-		case "POST":
-			var newCategory Category
-			err := json.NewDecoder(r.Body).Decode(&newCategory)
-			if err != nil {
-				http.Error(w, "Invalid request", http.StatusBadRequest)
-				return
-			}
+	mux.HandleFunc(apiProductsRoutes, productsHandler)
 
-			newCategory.ID = len(categories) + 1
-			categories = append(categories, newCategory)
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(newCategory)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "OK",
+			"message": "API Running",
+		})
 	})
 
-	mux.HandleFunc(apiProductsRoutes+"/", productsHandler)
-	mux.HandleFunc(apiProductsRoutes, func(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Starting server at :8080")
+
+	err := http.ListenAndServe(":8080", mux)
+	if err != nil {
+		fmt.Println("Error starting server:", err)
+	}
+
+}
+
+func productsHandler(w http.ResponseWriter, r *http.Request) {
+	pathSuffix := strings.TrimPrefix(r.URL.Path, apiProductsRoutes)
+	if (pathSuffix == "") || (pathSuffix == "/") {
 		switch r.Method {
 		case "GET":
 			w.Header().Set("Content-Type", "application/json")
@@ -88,49 +87,58 @@ func main() {
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	})
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "OK",
-			"message": "API Running",
-		})
-	})
-
-	fmt.Println("Starting server at :8080")
-
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
+	} else {
+		switch r.Method {
+		case "GET":
+			getProductByID(w, r)
+		case "PUT":
+			updateProduct(w, r)
+		case "DELETE":
+			deleteProduct(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	}
 
-}
-
-func productsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		getProductByID(w, r)
-	case "PUT":
-		updateProduct(w, r)
-	case "DELETE":
-		deleteProduct(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
 }
 
 func categoriesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		getCategoryByID(w, r)
-	case "PUT":
-		updateCategory(w, r)
-	case "DELETE":
-		deleteCategory(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	pathSuffix := strings.TrimPrefix(r.URL.Path, apiCategoriesRoutes)
+	if (pathSuffix == "") || (pathSuffix == "/") {
+		switch r.Method {
+		case "GET":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(categories)
+		case "POST":
+			var newCategory Category
+			err := json.NewDecoder(r.Body).Decode(&newCategory)
+			if err != nil {
+				http.Error(w, "Invalid request", http.StatusBadRequest)
+				return
+			}
+
+			newCategory.ID = len(categories) + 1
+			categories = append(categories, newCategory)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(newCategory)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else {
+		switch r.Method {
+		case "GET":
+			getCategoryByID(w, r)
+		case "PUT":
+			updateCategory(w, r)
+		case "DELETE":
+			deleteCategory(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	}
+
 }
 
 func getProductByID(w http.ResponseWriter, r *http.Request) {
