@@ -4,3 +4,5 @@ kasir-api.exe
 *.log
 *.http
 *.rest
+
+*.env
