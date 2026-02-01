@@ -39,6 +39,10 @@ func (handler *ProductHandler) HandleProductsById(w http.ResponseWriter, r *http
 	switch r.Method {
 	case http.MethodGet:
 		handler.GetByID(w, r, id)
+	case http.MethodPut:
+		handler.Update(w, r, id)
+	case http.MethodDelete:
+		handler.Delete(w, r, id)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
