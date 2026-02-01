@@ -55,7 +55,7 @@ func (handler *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) (
 		return nil, err
 	}
 
-	w.Header().Set("Content=Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(categories)
 	return categories, nil
 }
