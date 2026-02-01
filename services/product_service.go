@@ -23,7 +23,7 @@ func (service *ProductService) Create(product *model.Product) error {
 	return service.repo.Create(product)
 }
 
-func (service *ProductService) GetByID(id int) (*model.Product, error) {
+func (service *ProductService) GetByID(id int) (*model.ProductJoin, error) {
 	return service.repo.GetByID(id)
 }
 

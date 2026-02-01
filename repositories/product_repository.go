@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 	"kasir-api/model"
 )
 
@@ -45,11 +46,14 @@ func (repo *ProductRepository) Create(product *model.Product) error {
 	return nil
 }
 
-func (repo *ProductRepository) GetByID(id int) (*model.Product, error) {
-	query := "SELECT id, name, price, stock, category_id FROM products WHERE id = $1"
+func (repo *ProductRepository) GetByID(id int) (*model.ProductJoin, error) {
+	query := "SELECT p.id, p.name AS product_name, p.price, p.stock, c.name AS category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = $1"
 
-	var product model.Product
-	err := repo.db.QueryRow(query, id).Scan(&product.ID, &product.Name, &product.Price, &product.Stock, &product.CategoryID)
+	var product model.ProductJoin
+	err := repo.db.QueryRow(query, id).Scan(&product.ID, &product.ProductName, &product.Price, &product.Stock, &product.CategoryName)
+	if err == sql.ErrNoRows {
+		return nil, errors.New("produk tidak ditemukan")
+	}
 	if err != nil {
 		return nil, err
 	}
